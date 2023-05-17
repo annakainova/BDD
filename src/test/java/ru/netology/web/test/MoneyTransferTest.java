@@ -1,45 +1,16 @@
 package ru.netology.web.test;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import ru.netology.web.data.DataHelper;
-import ru.netology.web.page.LoginPageV1;
 import ru.netology.web.page.LoginPageV2;
-import ru.netology.web.page.LoginPageV3;
+
+import java.util.Random;
 
 import static com.codeborne.selenide.Selenide.open;
 
 class MoneyTransferTest {
-    @Test
-    void shouldTransferMoneyBetweenOwnCardsV1() {
-        open("http://localhost:9999");
-        var loginPage = new LoginPageV1();
-//    var loginPage = open("http://localhost:9999", LoginPageV1.class);
-        var authInfo = DataHelper.getAuthInfo();
-        var verificationPage = loginPage.validLogin(authInfo);
-        var verificationCode = DataHelper.getVerificationCodeFor(authInfo);
-        verificationPage.validVerify(verificationCode);
-    }
-
-    @Test
-    void shouldTransferMoneyBetweenOwnCardsV2() {
-        open("http://localhost:9999");
-        var loginPage = new LoginPageV2();
-//    var loginPage = open("http://localhost:9999", LoginPageV2.class);
-        var authInfo = DataHelper.getAuthInfo();
-        var verificationPage = loginPage.validLogin(authInfo);
-        var verificationCode = DataHelper.getVerificationCodeFor(authInfo);
-        verificationPage.validVerify(verificationCode);
-    }
-
-    @Test
-    void shouldTransferMoneyBetweenOwnCardsV3() {
-        var loginPage = open("http://localhost:9999", LoginPageV3.class);
-        var authInfo = DataHelper.getAuthInfo();
-        var verificationPage = loginPage.validLogin(authInfo);
-        var verificationCode = DataHelper.getVerificationCodeFor(authInfo);
-        verificationPage.validVerify(verificationCode);
-    }
-
     @Test
         //check if we press cancel balances are not changed
     void shouldCancelTransfer() {
@@ -48,10 +19,14 @@ class MoneyTransferTest {
         var verificationPage = loginPage.validLogin(authInfo);
         var verificationCode = DataHelper.getVerificationCodeFor(authInfo);
         var dashboardPage = verificationPage.validVerify(verificationCode);
+
+        var balanceForFirstCard = dashboardPage.getCardBalance(DataHelper.getFirstCardInfo().getCardID());
+        var balanceForSecondCard = dashboardPage.getCardBalance(DataHelper.getSecondCardInfo().getCardID());
         var transactionPage = dashboardPage.getTransactionPage(DataHelper.getFirstCardInfo().getCardID());
         transactionPage.cancelTransaction();
-        dashboardPage.checkBalance(DataHelper.getFirstCardInfo().getCardID(), DataHelper.getBaseBalance().getBalanceForFirstCard());
-        dashboardPage.checkBalance(DataHelper.getSecondCardInfo().getCardID(), DataHelper.getBaseBalance().getBalanceForSecondCard());
+
+        Assertions.assertEquals(balanceForFirstCard, dashboardPage.getCardBalance(DataHelper.getFirstCardInfo().getCardID()));
+        Assertions.assertEquals(balanceForSecondCard, dashboardPage.getCardBalance(DataHelper.getSecondCardInfo().getCardID()));
     }
 
     @Test
@@ -62,11 +37,15 @@ class MoneyTransferTest {
         var verificationPage = loginPage.validLogin(authInfo);
         var verificationCode = DataHelper.getVerificationCodeFor(authInfo);
         var dashboardPage = verificationPage.validVerify(verificationCode);
+
+        var balanceForFirstCard = dashboardPage.getCardBalance(DataHelper.getFirstCardInfo().getCardID());
+        var balanceForSecondCard = dashboardPage.getCardBalance(DataHelper.getSecondCardInfo().getCardID());
         var transactionPage = dashboardPage.getTransactionPage(DataHelper.getFirstCardInfo().getCardID());
-        var enoughAmount = DataHelper.getLessMoneyThanBalance();
-        transactionPage.doTransaction(DataHelper.getFirstCardInfo().getCardNumber(), enoughAmount.getAmount());
-        dashboardPage.checkBalance(DataHelper.getFirstCardInfo().getCardID(), DataHelper.getBaseBalance().getBalanceForFirstCard());
-        dashboardPage.checkBalance(DataHelper.getSecondCardInfo().getCardID(), DataHelper.getBaseBalance().getBalanceForSecondCard());
+        var enoughAmount = new Random().nextInt(balanceForFirstCard);
+        transactionPage.doTransaction(DataHelper.getFirstCardInfo().getCardNumber(), Integer.toString(enoughAmount));
+
+        Assertions.assertEquals(balanceForFirstCard, dashboardPage.getCardBalance(DataHelper.getFirstCardInfo().getCardID()));
+        Assertions.assertEquals(balanceForSecondCard, dashboardPage.getCardBalance(DataHelper.getSecondCardInfo().getCardID()));
     }
 
     @Test
@@ -77,47 +56,61 @@ class MoneyTransferTest {
         var verificationPage = loginPage.validLogin(authInfo);
         var verificationCode = DataHelper.getVerificationCodeFor(authInfo);
         var dashboardPage = verificationPage.validVerify(verificationCode);
+
+        var balanceForFirstCard = dashboardPage.getCardBalance(DataHelper.getFirstCardInfo().getCardID());
+        var balanceForSecondCard = dashboardPage.getCardBalance(DataHelper.getSecondCardInfo().getCardID());
         var transactionPage = dashboardPage.getTransactionPage(DataHelper.getFirstCardInfo().getCardID());
-        var enoughAmount = DataHelper.getLessMoneyThanBalance();
-        transactionPage.doTransaction(DataHelper.getSecondCardInfo().getCardNumber(), enoughAmount.getAmount());
-        dashboardPage.checkBalance(DataHelper.getFirstCardInfo().getCardID(), DataHelper.getBalanceAfterSuccessfulTransaction().getBalanceForFirstCard());
-        dashboardPage.checkBalance(DataHelper.getSecondCardInfo().getCardID(), DataHelper.getBalanceAfterSuccessfulTransaction().getBalanceForSecondCard());
+        var enoughAmount = new Random().nextInt(balanceForFirstCard);
+        transactionPage.doTransaction(DataHelper.getSecondCardInfo().getCardNumber(), Integer.toString(enoughAmount));
+
+        Assertions.assertEquals(balanceForFirstCard + enoughAmount, dashboardPage.getCardBalance(DataHelper.getFirstCardInfo().getCardID()));
+        Assertions.assertEquals(balanceForSecondCard - enoughAmount, dashboardPage.getCardBalance(DataHelper.getSecondCardInfo().getCardID()));
+
         //return everything to original state
         dashboardPage.getTransactionPage(DataHelper.getSecondCardInfo().getCardID());
-        transactionPage.doTransaction(DataHelper.getFirstCardInfo().getCardNumber(), enoughAmount.getAmount());
+        transactionPage.doTransaction(DataHelper.getFirstCardInfo().getCardNumber(), Integer.toString(enoughAmount));
     }
 
-  @Test
-    //check if we make transaction and we have enough money transaction will happen
-  void shouldTransferAllBalance() {
-    var loginPage = open("http://localhost:9999", LoginPageV2.class);
-    var authInfo = DataHelper.getAuthInfo();
-    var verificationPage = loginPage.validLogin(authInfo);
-    var verificationCode = DataHelper.getVerificationCodeFor(authInfo);
-    var dashboardPage = verificationPage.validVerify(verificationCode);
-    var transactionPage = dashboardPage.getTransactionPage(DataHelper.getFirstCardInfo().getCardID());
-    var amount = DataHelper.getAllBalance();
-    transactionPage.doTransaction(DataHelper.getSecondCardInfo().getCardNumber(), amount.getAmount());
-    dashboardPage.checkBalance(DataHelper.getFirstCardInfo().getCardID(), DataHelper.getBalanceAfterSuccessfulTransactionAllBalance().getBalanceForFirstCard());
-    dashboardPage.checkBalance(DataHelper.getSecondCardInfo().getCardID(), DataHelper.getBalanceAfterSuccessfulTransactionAllBalance().getBalanceForSecondCard());
-    //return everything to original state
-    dashboardPage.getTransactionPage(DataHelper.getSecondCardInfo().getCardID());
-    transactionPage.doTransaction(DataHelper.getFirstCardInfo().getCardNumber(), amount.getAmount());
-  }
+    @Test
+        //check if we make transaction and we have enough money transaction will happen
+    void shouldTransferAllBalance() {
+        var loginPage = open("http://localhost:9999", LoginPageV2.class);
+        var authInfo = DataHelper.getAuthInfo();
+        var verificationPage = loginPage.validLogin(authInfo);
+        var verificationCode = DataHelper.getVerificationCodeFor(authInfo);
+        var dashboardPage = verificationPage.validVerify(verificationCode);
+
+        var balanceForFirstCard = dashboardPage.getCardBalance(DataHelper.getFirstCardInfo().getCardID());
+        var balanceForSecondCard = dashboardPage.getCardBalance(DataHelper.getSecondCardInfo().getCardID());
+        var transactionPage = dashboardPage.getTransactionPage(DataHelper.getFirstCardInfo().getCardID());
+        transactionPage.doTransaction(DataHelper.getSecondCardInfo().getCardNumber(), Integer.toString(balanceForSecondCard));
+
+        Assertions.assertEquals(balanceForFirstCard + balanceForSecondCard, dashboardPage.getCardBalance(DataHelper.getFirstCardInfo().getCardID()));
+        Assertions.assertEquals(0, dashboardPage.getCardBalance(DataHelper.getSecondCardInfo().getCardID()));
+
+        //return everything to original state
+        dashboardPage.getTransactionPage(DataHelper.getSecondCardInfo().getCardID());
+        transactionPage.doTransaction(DataHelper.getFirstCardInfo().getCardNumber(), Integer.toString(balanceForSecondCard));
+    }
 
     @Test
-      //check if we make transaction and we do not have enough money transaction will not happen
+        //check if we make transaction and we do not have enough money transaction will not happen
     void shouldNotTransferMoneyMoreThanBalance() {
         var loginPage = open("http://localhost:9999", LoginPageV2.class);
         var authInfo = DataHelper.getAuthInfo();
         var verificationPage = loginPage.validLogin(authInfo);
         var verificationCode = DataHelper.getVerificationCodeFor(authInfo);
         var dashboardPage = verificationPage.validVerify(verificationCode);
+
+        var balanceForFirstCard = dashboardPage.getCardBalance(DataHelper.getFirstCardInfo().getCardID());
+        var balanceForSecondCard = dashboardPage.getCardBalance(DataHelper.getSecondCardInfo().getCardID());
+
         var transactionPage = dashboardPage.getTransactionPage(DataHelper.getSecondCardInfo().getCardID());
-        var notEnoughAmount = DataHelper.getMoreMoneyThanBalance();
-        transactionPage.doTransaction(DataHelper.getFirstCardInfo().getCardNumber(), notEnoughAmount.getAmount());
-        dashboardPage.checkBalance(DataHelper.getFirstCardInfo().getCardID(), DataHelper.getBaseBalance().getBalanceForFirstCard());
-        dashboardPage.checkBalance(DataHelper.getSecondCardInfo().getCardID(), DataHelper.getBaseBalance().getBalanceForSecondCard());
+        var notEnoughAmount = balanceForFirstCard + balanceForFirstCard;
+        transactionPage.doTransaction(DataHelper.getFirstCardInfo().getCardNumber(), Integer.toString(notEnoughAmount));
+
+        Assertions.assertEquals(balanceForFirstCard, dashboardPage.getCardBalance(DataHelper.getFirstCardInfo().getCardID()));
+        Assertions.assertEquals(balanceForSecondCard, dashboardPage.getCardBalance(DataHelper.getSecondCardInfo().getCardID()));
     }
 }
 

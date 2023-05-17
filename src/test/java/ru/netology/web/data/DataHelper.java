@@ -29,15 +29,6 @@ public class DataHelper {
   public static CardInfo getSecondCardInfo() {return new CardInfo("5559 0000 0000 0002", "0f3f5c2a-249e-4c3d-8287-09f7a039391d");}
 
   @Value
-  public static class Amount {
-    private String amount;
-  }
-
-  public static Amount getLessMoneyThanBalance() {return new Amount("5000");}
-  public static Amount getMoreMoneyThanBalance() {return new Amount("25000");}
-  public static Amount getAllBalance() {return new Amount("10000");}
-
-  @Value
   public static class VerificationCode {
     private String code;
   }
@@ -45,18 +36,4 @@ public class DataHelper {
   public static VerificationCode getVerificationCodeFor(AuthInfo authInfo) {
     return new VerificationCode("12345");
   }
-
-  @Value
-  public static class CardsBalance {
-    private int balanceForFirstCard;
-    private int balanceForSecondCard;
-  }
-
-  public static CardsBalance getBaseBalance() {
-    return new CardsBalance(10000, 10000);
-  }
-  public static CardsBalance getBalanceAfterSuccessfulTransaction() {
-    return new CardsBalance(15000, 5000);
-  }
-  public static CardsBalance getBalanceAfterSuccessfulTransactionAllBalance() { return new CardsBalance(20000, 0); }
 }
