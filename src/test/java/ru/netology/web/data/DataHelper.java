@@ -36,4 +36,5 @@ public class DataHelper {
   public static VerificationCode getVerificationCodeFor(AuthInfo authInfo) {
     return new VerificationCode("12345");
   }
+
 }
